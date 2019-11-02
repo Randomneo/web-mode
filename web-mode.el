@@ -3,7 +3,7 @@
 
 ;; Copyright 2011-2019 François-Xavier Bois
 
-;; Version: 16.0.24
+;; Version: 16.0.25
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -24,7 +24,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "16.0.24"
+(defconst web-mode-version "16.0.25"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -44,7 +44,8 @@
 ;;---- CUSTOMS -----------------------------------------------------------------
 
 (defcustom web-mode-block-padding 0
-  "Multi-line block (php, ruby, java, python, asp, etc.) left padding."
+  "Multi-line block (php, ruby, java, python, asp, etc.) left padding.
+   -1 to have to code aligned on the column 0."
   :type '(choice (integer :tags "Number of spaces")
 		         (const :tags "No indent" nil))
   :group 'web-mode)
@@ -7657,7 +7658,14 @@ another auto-completion with different ac-sources (e.g. ac-php)")
        ((member language '("css" "sql" "markdown" "pug" "stylus"))
         (setq reg-col (if web-mode-style-padding (+ reg-col web-mode-style-padding) 0)))
        ((not (member language '("html" "xml" "razor")))
-        (setq reg-col (if web-mode-block-padding (+ reg-col web-mode-block-padding) 0)))
+        (setq reg-col
+              (cond
+               ((not web-mode-block-padding) reg-col)
+               ((eq web-mode-block-padding -1) 0)
+               (t (+ reg-col web-mode-block-padding))
+               ) ;cond
+              ) ;setq
+        )
        )
 
       (list :curr-char curr-char
@@ -7680,7 +7688,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
 
   (let ((offset nil)
         (char nil)
-        (debug nil)
+        (debug t)
         (inhibit-modification-hooks nil)
         (adjust t))
 
@@ -8226,7 +8234,8 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                    (string-match-p "\\(^\\|[}[:space:]]+\\)else$" prev-line)))
           (when debug (message "I370(%S)" pos))
           (cond
-           ((string-match-p "else$" prev-line)
+           ((and (string-match-p "else$" prev-line)
+                 (not (string-match-p "^{" curr-line)))
             (setq offset (+ prev-indentation web-mode-code-indent-offset))
             )
            ((setq tmp (web-mode-part-is-opener prev-pos reg-beg))
